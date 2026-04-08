@@ -6,6 +6,8 @@
 
 package org.opensearch.jdbc.protocol;
 
+import org.opensearch.jdbc.internal.util.SqlParser;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -16,11 +18,11 @@ public class JdbcQueryRequest implements QueryRequest {
     List<JdbcQueryParam> parameters;
 
     public JdbcQueryRequest(String sql) {
-        this.statement = sql;
+        this.statement = SqlParser.normalizeIdentifierQuotes(sql);
     }
 
     public JdbcQueryRequest(String sql, int fetchSize) {
-        this.statement = sql;
+        this.statement = SqlParser.normalizeIdentifierQuotes(sql);
         this.fetchSize = fetchSize;
     }
 

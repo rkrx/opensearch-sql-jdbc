@@ -25,6 +25,12 @@ class SqlParserTests {
                 () -> String.format("[%s] returned %d parameters. Expected %d.", sql, paramCount, expectedCount));
     }
 
+    @ParameterizedTest
+    @MethodSource("quotedIdentifierProvider")
+    void testNormalizeIdentifierQuotes(String sql, String expectedSql) {
+        assertEquals(expectedSql, SqlParser.normalizeIdentifierQuotes(sql));
+    }
+
 
     private static Stream<Arguments> pameterizedValidSqlProvider() {
         return Stream.of(
@@ -63,6 +69,18 @@ class SqlParserTests {
                 Arguments.of("select X from table where A=? and B=? and C=? and D=? and (E=? or F=?) ", 6),
                 Arguments.of("select X from table where A=? \n --- \n and B=? /* ? */ and C=? and \n D=? and (E=? or F=?) ", 6)
 
+        );
+    }
+
+    private static Stream<Arguments> quotedIdentifierProvider() {
+        return Stream.of(
+                Arguments.of("select * from \"xn-development1\"", "select * from `xn-development1`"),
+                Arguments.of("select \"field-name\" from sample", "select `field-name` from sample"),
+                Arguments.of("select '\"literal\"', \"field-name\" from sample -- \"comment\"",
+                        "select '\"literal\"', `field-name` from sample -- \"comment\""),
+                Arguments.of("select \"field\" /* \"comment\" */ from sample", "select `field` /* \"comment\" */ from sample"),
+                Arguments.of("select \"field\"\"name\" from sample", "select `field\"name` from sample"),
+                Arguments.of("select * from \"unterminated", "select * from \"unterminated")
         );
     }
 

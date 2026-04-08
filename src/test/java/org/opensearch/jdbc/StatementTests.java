@@ -82,6 +82,38 @@ public class StatementTests implements WireMockServerHelpers {
         con.close();
     }
 
+    @Test
+    void testQueryRequestNormalizesQuotedIdentifiers() throws ResponseException, IOException, SQLException {
+
+        final String sql = "select * from \"nyc-taxis\"";
+
+        TransportFactory tf = mock(TransportFactory.class);
+        ProtocolFactory pf = mock(ProtocolFactory.class);
+        Protocol mockProtocol = mock(Protocol.class);
+
+        when(mockProtocol.connect(anyInt())).thenReturn(mock(ConnectionResponse.class));
+
+        when(tf.getTransport(any(), any(), any()))
+                .thenReturn(mock(Transport.class));
+
+        when(pf.getProtocol(any(ConnectionConfig.class), any(Transport.class)))
+                .thenReturn(mockProtocol);
+
+        when(mockProtocol.execute(any(QueryRequest.class)))
+                .thenReturn(mock(QueryResponse.class));
+
+        Connection con = new ConnectionImpl(ConnectionConfig.builder().build(), tf, pf, NoOpLogger.INSTANCE);
+
+        Statement st = con.createStatement();
+        ResultSet rs = assertDoesNotThrow(() -> st.executeQuery(sql));
+
+        verify(mockProtocol).execute(new JdbcQueryRequest("select * from `nyc-taxis`"));
+
+        st.close();
+        rs.close();
+        con.close();
+    }
+
 
     @Test
     void testEffectiveFetchSizeOnStatement() throws ResponseException, IOException, SQLException {

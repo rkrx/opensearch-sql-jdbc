@@ -163,8 +163,7 @@ public class DatabaseMetaDataImpl implements DatabaseMetaData, JdbcWrapper, Logg
 
     @Override
     public String getIdentifierQuoteString() throws SQLException {
-        // space to indicate quoting not supported currently
-        return " ";
+        return "`";
     }
 
     @Override

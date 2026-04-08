@@ -45,6 +45,7 @@ public class DatabaseMetaDataTests {
         assertEquals(6, dbmd.getDatabaseMajorVersion());
         assertEquals(3, dbmd.getDatabaseMinorVersion());
         assertEquals("OpenSearch", dbmd.getDatabaseProductName());
+        assertEquals("`", dbmd.getIdentifierQuoteString());
 
         assertFalse(con.isClosed());
     }

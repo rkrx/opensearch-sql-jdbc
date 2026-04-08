@@ -40,6 +40,94 @@ public class SqlParser {
         return count;
     }
 
+    public static String normalizeIdentifierQuotes(String sql) {
+        if (sql == null || sql.indexOf('\"') == -1)
+            return sql;
+
+        StringBuilder normalizedSql = new StringBuilder(sql.length());
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        boolean inSingleLineComment = false;
+        boolean inMultiLineComment = false;
+
+        for (int i = 0; i < sql.length(); i++) {
+            char ch = sql.charAt(i);
+            char nextCh = i + 1 < sql.length() ? sql.charAt(i + 1) : 0;
+
+            if (inSingleQuote) {
+                normalizedSql.append(ch);
+
+                if (ch == '\'') {
+                    if (nextCh == '\'') {
+                        normalizedSql.append(nextCh);
+                        i++;
+                    } else {
+                        inSingleQuote = false;
+                    }
+                }
+                continue;
+            }
+
+            if (inDoubleQuote) {
+                if (ch == '\"') {
+                    if (nextCh == '\"') {
+                        normalizedSql.append('\"');
+                        i++;
+                    } else {
+                        normalizedSql.append('`');
+                        inDoubleQuote = false;
+                    }
+                } else {
+                    normalizedSql.append(ch);
+                }
+                continue;
+            }
+
+            if (inSingleLineComment) {
+                normalizedSql.append(ch);
+
+                if (ch == '\r' || ch == '\n')
+                    inSingleLineComment = false;
+
+                continue;
+            }
+
+            if (inMultiLineComment) {
+                normalizedSql.append(ch);
+
+                if (ch == '*' && nextCh == '/') {
+                    normalizedSql.append(nextCh);
+                    i++;
+                    inMultiLineComment = false;
+                }
+
+                continue;
+            }
+
+            if (ch == '\'') {
+                normalizedSql.append(ch);
+                inSingleQuote = true;
+            } else if (ch == '\"') {
+                normalizedSql.append('`');
+                inDoubleQuote = true;
+            } else if (ch == '-' && nextCh == '-') {
+                normalizedSql.append(ch);
+                normalizedSql.append(nextCh);
+                i++;
+                inSingleLineComment = true;
+            } else if (ch == '/' && nextCh == '*') {
+                normalizedSql.append(ch);
+                normalizedSql.append(nextCh);
+                i++;
+                inMultiLineComment = true;
+            } else {
+                normalizedSql.append(ch);
+            }
+        }
+
+        return inDoubleQuote ? sql : normalizedSql.toString();
+    }
+
     private static int locateCommentEnd(String s, char commentStartChar, int commentStartIndex) {
         if (commentStartIndex + 1 > s.length())
             return commentStartIndex;
